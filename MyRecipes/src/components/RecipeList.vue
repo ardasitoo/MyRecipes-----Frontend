@@ -1,8 +1,12 @@
 <template>
   <div>
     <h2>Rezepte</h2>
-    <ul>
-      <li v-for="recipe in recipes" :key="recipe.id">
+
+    <p v-if="loading">Rezepte werden geladen...</p>
+    <p v-else-if="error">{{ error }}</p>
+
+    <ul v-else>
+      <li v-for="recipe in recipes" :key="recipe.name">
         {{ recipe.name }}
       </li>
     </ul>
@@ -13,12 +17,26 @@
 export default {
   data() {
     return {
-      recipes: [
-        { id: 1, name: "Lasagne" },
-        { id: 2, name: "Yaglama" },
-        { id: 3, name: "Pizza Diavola" }
-      ]
+      recipes: [],
+      loading: true,
+      error: ""
     };
+  },
+
+  async mounted() {
+    try {
+      const response = await fetch("http://localhost:8080/recipes");
+
+      if (!response.ok) {
+        throw new Error("Fehler beim Laden der Rezepte");
+      }
+
+      this.recipes = await response.json();
+    } catch (e) {
+      this.error = "Rezepte konnten nicht geladen werden.";
+    } finally {
+      this.loading = false;
+    }
   }
 };
 </script>
