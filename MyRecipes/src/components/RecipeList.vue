@@ -25,7 +25,7 @@ export default {
 
   async mounted() {
     try {
-      const response = await fetch("http://localhost:8080/recipes");
+      const response = await fetch("https://myrecipes-backend-dew0.onrender.com/recipes");
 
       if (!response.ok) {
         throw new Error("Fehler beim Laden der Rezepte");
