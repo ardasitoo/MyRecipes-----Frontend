@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <main class="app-shell">
     <h1>Meine Rezepte App</h1>
     <RecipeList />
-  </div>
+  </main>
 </template>
 
 <script>
