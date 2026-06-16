@@ -10,24 +10,27 @@
 
         <div class="home-actions">
           <a class="primary-link" href="#recipes">Rezepte verwalten</a>
-          <span>7 Use-Cases bereit für die Dokumentation</span>
         </div>
       </div>
 
-      <div class="home-preview" aria-label="Rezeptvorschau">
-        <div class="preview-card featured">
-          <span>Hauptgericht</span>
-          <strong>Pizza Margherita</strong>
-          <p>Tomaten, Mozzarella, Basilikum</p>
+      <div class="home-panel" aria-label="Funktionsübersicht">
+        <div class="panel-header">
+          <span>Übersicht</span>
+          <strong>Alles an einem Ort</strong>
         </div>
-        <div class="preview-grid">
-          <div class="preview-card">
-            <span>Dessert</span>
-            <strong>Apfelkuchen</strong>
+
+        <div class="feature-list">
+          <div>
+            <span>Suchen</span>
+            <p>Rezepte über Namen, Zutaten und Beschreibung finden.</p>
           </div>
-          <div class="preview-card">
-            <span>Suche</span>
-            <strong>Pasta</strong>
+          <div>
+            <span>Kategorien</span>
+            <p>Gerichte nach Hauptgericht, Dessert oder eigenen Gruppen ordnen.</p>
+          </div>
+          <div>
+            <span>Bearbeiten</span>
+            <p>Zutaten, Zeiten und Zubereitung jederzeit aktualisieren.</p>
           </div>
         </div>
       </div>

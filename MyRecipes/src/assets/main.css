@@ -214,52 +214,55 @@ a {
   transform: translateY(-1px);
 }
 
-.home-preview {
+.home-panel {
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
   align-content: center;
   border-radius: 8px;
-  background: #eef2f6;
-  padding: 1rem;
-}
-
-.preview-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.85rem;
-}
-
-.preview-card {
-  display: grid;
-  gap: 0.4rem;
-  min-height: 118px;
-  border: 1px solid rgba(216, 222, 230, 0.85);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 1rem;
-}
-
-.preview-card.featured {
-  min-height: 160px;
   background:
-    linear-gradient(135deg, rgba(63, 127, 114, 0.12), rgba(255, 255, 255, 0.9)),
-    #ffffff;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(249, 250, 251, 0.94)),
+    #eef2f6;
+  padding: 1.1rem;
 }
 
-.preview-card span {
-  color: var(--muted);
+.panel-header {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid rgba(216, 222, 230, 0.9);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.panel-header span,
+.feature-list span {
+  color: var(--primary-dark);
   font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.preview-card strong {
-  color: var(--text);
-  font-size: 1.2rem;
   font-weight: 850;
 }
 
-.preview-card p {
-  color: #4b5563;
+.panel-header strong {
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.feature-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.feature-list div {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid rgba(216, 222, 230, 0.9);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 0.9rem;
+}
+
+.feature-list p {
+  color: var(--muted);
 }
 
 .recipes-app {
@@ -485,8 +488,7 @@ small {
   .content-grid,
   .toolbar,
   .form-row,
-  .recipes-header,
-  .preview-grid {
+  .recipes-header {
     display: grid;
     grid-template-columns: 1fr;
   }
