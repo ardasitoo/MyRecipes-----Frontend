@@ -5,7 +5,6 @@
         <h2>Rezepte</h2>
         <p>{{ filteredRecipes.length }} von {{ recipes.length }} Rezepten</p>
       </div>
-      <button type="button" class="secondary-button" @click="resetForm">Neues Rezept</button>
     </header>
 
     <div class="toolbar">
