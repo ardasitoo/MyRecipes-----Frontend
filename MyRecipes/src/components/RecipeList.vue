@@ -9,7 +9,7 @@
       <label class="user-switch">
         Aktiver Benutzer
         <select v-model="currentUser">
-          <option v-for="user in users" :key="user" :value="user">{{ user }}</option>
+          <option v-for="userName in userNames" :key="userName" :value="userName">{{ userName }}</option>
         </select>
       </label>
     </header>
@@ -218,7 +218,7 @@
         <h3>Benutzer verwalten</h3>
         <p>
           Lege einen neuen Benutzer an. Danach kann diese Person im Benutzerwechsel ausgewählt werden und eigene Rezepte
-          speichern.
+          speichern. Nicht mehr benötigte Benutzer kannst du hier wieder löschen.
         </p>
       </div>
 
@@ -233,11 +233,13 @@
       <p v-if="userError" class="error">{{ userError }}</p>
 
       <div class="category-list">
-        <article v-for="user in users" :key="user" class="category-card">
+        <p v-if="users.length === 0" class="empty-state">Noch keine Benutzer angelegt.</p>
+        <article v-for="user in users" :key="user.id || user.name" class="category-card">
           <div>
-            <strong>{{ user }}</strong>
-            <span>{{ user === currentUser ? "Aktiv ausgewählt" : "Verfügbar" }}</span>
+            <strong>{{ user.name }}</strong>
+            <span>{{ user.name === currentUser ? "Aktiv ausgewählt" : "Verfügbar" }}</span>
           </div>
+          <button type="button" class="danger-button" @click="deleteUser(user)">Löschen</button>
         </article>
       </div>
     </section>
@@ -251,6 +253,7 @@ import {
   createUser,
   deleteCategoryById,
   deleteRecipeById,
+  deleteUserById,
   getCategories,
   getRecipes,
   getUsers,
@@ -275,13 +278,13 @@ export default {
       customCategories: [],
       selectedRecipe: null,
       editingRecipeId: null,
-      currentUser: "Simar",
-      users: ["Simar", "Familie", "Dozent"],
+      currentUser: "",
+      users: [],
       activeSection: "recipes",
       form: emptyForm(),
       categoryFormName: "",
       userFormName: "",
-      shareTargetUser: "Familie",
+      shareTargetUser: "",
       searchTerm: "",
       selectedCategory: "",
       showFavoritesOnly: false,
@@ -306,8 +309,12 @@ export default {
       return filterRecipes(this.recipes, this.searchTerm, this.selectedCategory, this.showFavoritesOnly);
     },
 
+    userNames() {
+      return this.users.map((user) => user.name).filter(Boolean);
+    },
+
     shareableUsers() {
-      return this.users.filter((user) => user !== this.currentUser);
+      return this.userNames.filter((user) => user !== this.currentUser);
     }
   },
 
@@ -334,11 +341,10 @@ export default {
 
       try {
         const loadedUsers = await getUsers();
-        const userNames = loadedUsers.map((user) => user.name).filter(Boolean);
-        this.users = userNames.length > 0 ? userNames : this.users;
+        this.users = loadedUsers.filter((user) => user.name);
 
-        if (!this.users.includes(this.currentUser)) {
-          this.currentUser = this.users[0] || "Simar";
+        if (!this.userNames.includes(this.currentUser)) {
+          this.currentUser = this.userNames[0] || "";
         }
 
         this.shareTargetUser = this.shareableUsers[0] || "";
@@ -350,6 +356,13 @@ export default {
     async loadRecipes() {
       this.loading = true;
       this.error = "";
+
+      if (!this.currentUser) {
+        this.recipes = [];
+        this.selectedRecipe = null;
+        this.loading = false;
+        return;
+      }
 
       try {
         this.recipes = await getRecipes(this.currentUser);
@@ -363,6 +376,11 @@ export default {
 
     async loadCategories() {
       this.categoryError = "";
+
+      if (!this.currentUser) {
+        this.customCategories = [];
+        return;
+      }
 
       try {
         this.customCategories = await getCategories(this.currentUser);
@@ -539,9 +557,9 @@ export default {
       try {
         const savedUser = await createUser({ name });
 
-        if (!this.users.includes(savedUser.name)) {
-          this.users.push(savedUser.name);
-          this.users.sort((firstUser, secondUser) => firstUser.localeCompare(secondUser));
+        if (!this.userNames.includes(savedUser.name)) {
+          this.users.push(savedUser);
+          this.users.sort((firstUser, secondUser) => firstUser.name.localeCompare(secondUser.name));
         }
 
         this.currentUser = savedUser.name;
@@ -552,6 +570,22 @@ export default {
         this.userError = "Benutzer konnte nicht gespeichert werden.";
       } finally {
         this.savingUser = false;
+      }
+    },
+
+    async deleteUser(user) {
+      try {
+        await deleteUserById(user.id);
+        this.users = this.users.filter((existingUser) => existingUser.id !== user.id);
+
+        if (this.currentUser === user.name) {
+          this.currentUser = this.userNames[0] || "";
+        }
+
+        this.shareTargetUser = this.shareableUsers[0] || "";
+        await Promise.all([this.loadRecipes(), this.loadCategories()]);
+      } catch (e) {
+        this.userError = "Benutzer konnte nicht gelöscht werden.";
       }
     }
   }

@@ -4,6 +4,7 @@ import {
   createRecipe,
   createUser,
   deleteRecipeById,
+  deleteUserById,
   getCategories,
   getRecipes,
   getUsers,
@@ -138,5 +139,15 @@ describe("recipeApi", () => {
         body: JSON.stringify(payload)
       })
     );
+  });
+
+  it("deletes a user by id", async () => {
+    fetch.mockResolvedValueOnce(jsonResponse({}));
+
+    await deleteUserById(12);
+
+    expect(fetch).toHaveBeenCalledWith("https://myrecipes-backend-dew0.onrender.com/users/12", {
+      method: "DELETE"
+    });
   });
 });

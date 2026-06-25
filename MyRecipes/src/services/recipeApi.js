@@ -106,3 +106,13 @@ export const createUser = async (payload) => {
 
   return parseJsonResponse(response, "Fehler beim Speichern des Benutzers");
 };
+
+export const deleteUserById = async (id) => {
+  const response = await fetch(`${USERS_API_URL}/${id}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw new Error("Fehler beim Loeschen des Benutzers");
+  }
+};

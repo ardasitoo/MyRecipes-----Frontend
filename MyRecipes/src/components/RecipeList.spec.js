@@ -35,7 +35,7 @@ const categories = [
   }
 ];
 
-const users = [{ name: "Simar" }, { name: "Familie" }, { name: "Dozent" }];
+const users = [{ id: 1, name: "Simar" }, { id: 2, name: "Familie" }, { id: 3, name: "Dozent" }];
 
 const jsonResponse = (body, ok = true) =>
   Promise.resolve({
@@ -333,5 +333,19 @@ describe("RecipeList", () => {
       })
     );
     expect(wrapper.find(".user-switch select").element.value).toBe("Mina");
+  });
+
+  it("deletes a user in the users section", async () => {
+    const wrapper = await mountWithApi();
+
+    await clickTab(wrapper, "Benutzer");
+    const userCards = wrapper.findAll(".category-card");
+    await userCards[1].find("button").trigger("click");
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledWith("https://myrecipes-backend-dew0.onrender.com/users/2", {
+      method: "DELETE"
+    });
+    expect(wrapper.text()).not.toContain("Familie");
   });
 });
