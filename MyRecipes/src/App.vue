@@ -5,7 +5,8 @@
         <p class="eyebrow">MyRecipes</p>
         <h1>Rezepte sammeln, ordnen und schnell wiederfinden.</h1>
         <p class="home-lead">
-          Eine ruhige Rezeptverwaltung für eigene Gerichte, Kategorien, Zutaten und Zubereitungsschritte.
+          Eine ruhige Rezeptverwaltung für eigene Gerichte, persönliche Benutzerbereiche, Kategorien, Zutaten und
+          Zubereitungsschritte.
         </p>
 
         <div class="home-actions">
@@ -25,12 +26,12 @@
             <p>Rezepte über Namen, Zutaten und Beschreibung finden.</p>
           </div>
           <div>
-            <span>Kategorien</span>
-            <p>Gerichte nach Hauptgericht, Dessert oder eigenen Gruppen ordnen.</p>
+            <span>Benutzer</span>
+            <p>Zwischen Personen wechseln und jeweils nur die eigenen Rezepte sehen.</p>
           </div>
           <div>
-            <span>Bearbeiten</span>
-            <p>Zutaten, Zeiten und Zubereitung jederzeit aktualisieren.</p>
+            <span>Kategorien</span>
+            <p>Eigene Kategorien anlegen und beim Rezept direkt verwenden.</p>
           </div>
         </div>
       </div>
