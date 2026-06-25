@@ -434,6 +434,11 @@ export default {
         return;
       }
 
+      if (!payload.ingredients) {
+        this.saveError = "Bitte gib mindestens eine Zutat ein.";
+        return;
+      }
+
       this.saving = true;
       this.saveError = "";
 

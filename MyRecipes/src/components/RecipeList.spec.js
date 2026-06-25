@@ -191,6 +191,16 @@ describe("RecipeList", () => {
     expect(fetch).toHaveBeenCalledTimes(3);
   });
 
+  it("does not submit a recipe without ingredients", async () => {
+    const wrapper = await mountWithApi({ loadedRecipes: [] });
+
+    await wrapper.find('input[placeholder="z. B. Pizza Margherita"]').setValue("Pizza");
+    await wrapper.find("form").trigger("submit.prevent");
+
+    expect(wrapper.text()).toContain("Bitte gib mindestens eine Zutat ein.");
+    expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
   it("creates a recipe with all form fields and the active owner", async () => {
     const wrapper = await mountWithApi({ loadedRecipes: [] });
 
