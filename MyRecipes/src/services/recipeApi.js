@@ -1,5 +1,6 @@
 const RECIPES_API_URL = "https://myrecipes-backend-dew0.onrender.com/recipes";
 const CATEGORIES_API_URL = "https://myrecipes-backend-dew0.onrender.com/categories";
+const USERS_API_URL = "https://myrecipes-backend-dew0.onrender.com/users";
 
 const ownerQuery = (ownerName) => `owner=${encodeURIComponent(ownerName)}`;
 
@@ -40,6 +41,18 @@ export const updateRecipe = async (id, payload) => {
   return parseJsonResponse(response, "Fehler beim Speichern des Rezepts");
 };
 
+export const shareRecipe = async (id, ownerName) => {
+  const response = await fetch(`${RECIPES_API_URL}/${id}/share`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ ownerName })
+  });
+
+  return parseJsonResponse(response, "Fehler beim Weitergeben des Rezepts");
+};
+
 export const deleteRecipeById = async (id) => {
   const response = await fetch(`${RECIPES_API_URL}/${id}`, {
     method: "DELETE"
@@ -75,4 +88,21 @@ export const deleteCategoryById = async (id) => {
   if (!response.ok) {
     throw new Error("Fehler beim Loeschen der Kategorie");
   }
+};
+
+export const getUsers = async () => {
+  const response = await fetch(USERS_API_URL);
+  return parseJsonResponse(response, "Fehler beim Laden der Benutzer");
+};
+
+export const createUser = async (payload) => {
+  const response = await fetch(USERS_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  return parseJsonResponse(response, "Fehler beim Speichern des Benutzers");
 };

@@ -21,6 +21,9 @@
       <button type="button" :class="{ active: activeSection === 'categories' }" @click="activeSection = 'categories'">
         Kategorien
       </button>
+      <button type="button" :class="{ active: activeSection === 'users' }" @click="activeSection = 'users'">
+        Benutzer
+      </button>
     </nav>
 
     <template v-if="activeSection === 'recipes'">
@@ -38,6 +41,11 @@
               {{ category }}
             </option>
           </select>
+        </label>
+
+        <label class="checkbox-label">
+          <input v-model="showFavoritesOnly" type="checkbox" />
+          Nur Favoriten
         </label>
       </div>
 
@@ -60,7 +68,10 @@
               <strong>{{ recipe.name }}</strong>
               <small>{{ recipe.category || "Ohne Kategorie" }}</small>
             </span>
-            <span>{{ recipe.preparationTime || 0 }} min</span>
+            <span class="recipe-meta">
+              <span v-if="recipe.favorite" class="favorite-badge">Favorit</span>
+              <span>{{ recipe.preparationTime || 0 }} min</span>
+            </span>
           </button>
         </aside>
 
@@ -89,12 +100,31 @@
                 <dt>Besitzer</dt>
                 <dd>{{ selectedRecipe.ownerName || currentUser }}</dd>
               </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{{ selectedRecipe.favorite ? "Favorit" : "Normal gespeichert" }}</dd>
+              </div>
             </dl>
 
             <div class="actions">
+              <button type="button" class="secondary-button" @click="toggleFavorite(selectedRecipe)">
+                {{ selectedRecipe.favorite ? "Favorit entfernen" : "Als Favorit markieren" }}
+              </button>
               <button type="button" @click="startEdit(selectedRecipe)">Bearbeiten</button>
               <button type="button" class="danger-button" @click="deleteRecipe(selectedRecipe)">Löschen</button>
             </div>
+
+            <div class="share-panel" aria-label="Rezept weitergeben">
+              <label>
+                Rezept weitergeben an
+                <select v-model="shareTargetUser">
+                  <option v-for="user in shareableUsers" :key="user" :value="user">{{ user }}</option>
+                </select>
+              </label>
+              <button type="button" @click="shareSelectedRecipe(selectedRecipe)">Kopie senden</button>
+            </div>
+
+            <p v-if="shareMessage" class="success">{{ shareMessage }}</p>
           </template>
 
           <p v-else class="empty-state">Wähle ein Rezept aus der Liste aus.</p>
@@ -152,7 +182,7 @@
       </div>
     </template>
 
-    <section v-else class="category-workspace" aria-label="Kategorien verwalten">
+    <section v-else-if="activeSection === 'categories'" class="category-workspace" aria-label="Kategorien verwalten">
       <div class="category-copy">
         <h3>Kategorien verwalten</h3>
         <p>
@@ -182,6 +212,35 @@
         </article>
       </div>
     </section>
+
+    <section v-else class="category-workspace" aria-label="Benutzer verwalten">
+      <div class="category-copy">
+        <h3>Benutzer verwalten</h3>
+        <p>
+          Lege einen neuen Benutzer an. Danach kann diese Person im Benutzerwechsel ausgewählt werden und eigene Rezepte
+          speichern.
+        </p>
+      </div>
+
+      <form class="category-form" @submit.prevent="saveUser">
+        <label>
+          Neuer Benutzer
+          <input v-model="userFormName" type="text" placeholder="z. B. Mina" />
+        </label>
+        <button type="submit">{{ savingUser ? "Speichert..." : "Benutzer speichern" }}</button>
+      </form>
+
+      <p v-if="userError" class="error">{{ userError }}</p>
+
+      <div class="category-list">
+        <article v-for="user in users" :key="user" class="category-card">
+          <div>
+            <strong>{{ user }}</strong>
+            <span>{{ user === currentUser ? "Aktiv ausgewählt" : "Verfügbar" }}</span>
+          </div>
+        </article>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -189,10 +248,13 @@
 import {
   createCategory,
   createRecipe,
+  createUser,
   deleteCategoryById,
   deleteRecipeById,
   getCategories,
   getRecipes,
+  getUsers,
+  shareRecipe,
   updateRecipe
 } from "../services/recipeApi";
 import { collectCategories, filterRecipes } from "../utils/recipeFilters";
@@ -218,14 +280,20 @@ export default {
       activeSection: "recipes",
       form: emptyForm(),
       categoryFormName: "",
+      userFormName: "",
+      shareTargetUser: "Familie",
       searchTerm: "",
       selectedCategory: "",
+      showFavoritesOnly: false,
       loading: true,
       saving: false,
       savingCategory: false,
+      savingUser: false,
       error: "",
       saveError: "",
-      categoryError: ""
+      categoryError: "",
+      userError: "",
+      shareMessage: ""
     };
   },
 
@@ -235,7 +303,11 @@ export default {
     },
 
     filteredRecipes() {
-      return filterRecipes(this.recipes, this.searchTerm, this.selectedCategory);
+      return filterRecipes(this.recipes, this.searchTerm, this.selectedCategory, this.showFavoritesOnly);
+    },
+
+    shareableUsers() {
+      return this.users.filter((user) => user !== this.currentUser);
     }
   },
 
@@ -244,16 +316,37 @@ export default {
       this.resetForm();
       this.searchTerm = "";
       this.selectedCategory = "";
+      this.showFavoritesOnly = false;
       this.selectedRecipe = null;
+      this.shareTargetUser = this.shareableUsers[0] || "";
+      this.shareMessage = "";
       await Promise.all([this.loadRecipes(), this.loadCategories()]);
     }
   },
 
   async mounted() {
-    await Promise.all([this.loadRecipes(), this.loadCategories()]);
+    await Promise.all([this.loadUsers(), this.loadRecipes(), this.loadCategories()]);
   },
 
   methods: {
+    async loadUsers() {
+      this.userError = "";
+
+      try {
+        const loadedUsers = await getUsers();
+        const userNames = loadedUsers.map((user) => user.name).filter(Boolean);
+        this.users = userNames.length > 0 ? userNames : this.users;
+
+        if (!this.users.includes(this.currentUser)) {
+          this.currentUser = this.users[0] || "Simar";
+        }
+
+        this.shareTargetUser = this.shareableUsers[0] || "";
+      } catch (e) {
+        this.userError = "Benutzer konnten nicht geladen werden.";
+      }
+    },
+
     async loadRecipes() {
       this.loading = true;
       this.error = "";
@@ -280,6 +373,7 @@ export default {
 
     selectRecipe(recipe) {
       this.selectedRecipe = recipe;
+      this.shareMessage = "";
     },
 
     startEdit(recipe) {
@@ -309,7 +403,8 @@ export default {
         preparationTime: Number(this.form.preparationTime) || 0,
         ingredients: this.form.ingredients.trim(),
         steps: this.form.steps.trim(),
-        ownerName: this.currentUser
+        ownerName: this.currentUser,
+        favorite: Boolean(this.selectedRecipe && this.editingRecipeId === this.selectedRecipe.id && this.selectedRecipe.favorite)
       };
     },
 
@@ -359,6 +454,42 @@ export default {
       }
     },
 
+    async toggleFavorite(recipe) {
+      const payload = {
+        name: recipe.name,
+        description: recipe.description || "",
+        category: recipe.category || "",
+        preparationTime: recipe.preparationTime || 0,
+        ingredients: recipe.ingredients || "",
+        steps: recipe.steps || "",
+        ownerName: recipe.ownerName || this.currentUser,
+        favorite: !recipe.favorite
+      };
+
+      try {
+        const savedRecipe = await updateRecipe(recipe.id, payload);
+        this.recipes = this.recipes.map((existingRecipe) => (existingRecipe.id === savedRecipe.id ? savedRecipe : existingRecipe));
+        this.selectedRecipe = savedRecipe;
+      } catch (e) {
+        this.saveError = "Favorit konnte nicht gespeichert werden.";
+      }
+    },
+
+    async shareSelectedRecipe(recipe) {
+      if (!this.shareTargetUser) {
+        this.shareMessage = "";
+        this.saveError = "Bitte wähle einen Benutzer zum Weitergeben aus.";
+        return;
+      }
+
+      try {
+        await shareRecipe(recipe.id, this.shareTargetUser);
+        this.shareMessage = `Rezept wurde als Kopie an ${this.shareTargetUser} weitergegeben.`;
+      } catch (e) {
+        this.saveError = "Rezept konnte nicht weitergegeben werden.";
+      }
+    },
+
     async saveCategory() {
       const name = this.categoryFormName.trim();
 
@@ -391,6 +522,36 @@ export default {
         this.customCategories = this.customCategories.filter((existingCategory) => existingCategory.id !== category.id);
       } catch (e) {
         this.categoryError = "Kategorie konnte nicht gelöscht werden.";
+      }
+    },
+
+    async saveUser() {
+      const name = this.userFormName.trim();
+
+      if (!name) {
+        this.userError = "Bitte gib einen Benutzernamen ein.";
+        return;
+      }
+
+      this.savingUser = true;
+      this.userError = "";
+
+      try {
+        const savedUser = await createUser({ name });
+
+        if (!this.users.includes(savedUser.name)) {
+          this.users.push(savedUser.name);
+          this.users.sort((firstUser, secondUser) => firstUser.localeCompare(secondUser));
+        }
+
+        this.currentUser = savedUser.name;
+        this.shareTargetUser = this.shareableUsers[0] || "";
+        this.userFormName = "";
+        await Promise.all([this.loadRecipes(), this.loadCategories()]);
+      } catch (e) {
+        this.userError = "Benutzer konnte nicht gespeichert werden.";
+      } finally {
+        this.savingUser = false;
       }
     }
   }

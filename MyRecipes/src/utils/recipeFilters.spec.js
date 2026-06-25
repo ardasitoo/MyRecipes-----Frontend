@@ -8,7 +8,8 @@ const recipes = [
     category: "Hauptgericht",
     ingredients: "Nudeln, Tomaten",
     steps: "Kochen",
-    ownerName: "Simar"
+    ownerName: "Simar",
+    favorite: false
   },
   {
     name: "Apfelkuchen",
@@ -16,7 +17,8 @@ const recipes = [
     category: "Dessert",
     ingredients: "Äpfel, Mehl",
     steps: "Backen",
-    ownerName: "Mina"
+    ownerName: "Mina",
+    favorite: true
   }
 ];
 
@@ -32,6 +34,10 @@ describe("recipeFilters", () => {
 
   it("combines search text and category filter", () => {
     expect(filterRecipes(recipes, "kuchen", "Hauptgericht")).toEqual([]);
+  });
+
+  it("filters only favorite recipes when requested", () => {
+    expect(filterRecipes(recipes, "", "", true)).toEqual([recipes[1]]);
   });
 
   it("collects categories from recipes and custom categories without duplicates", () => {

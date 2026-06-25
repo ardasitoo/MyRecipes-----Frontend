@@ -276,7 +276,8 @@ a {
 .actions,
 .form-row,
 .category-form,
-.category-card {
+.category-card,
+.share-panel {
   display: flex;
   gap: 0.9rem;
 }
@@ -348,6 +349,23 @@ small {
   flex: 1;
 }
 
+.checkbox-label {
+  flex: 0 0 auto;
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  grid-template-columns: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  padding: 0 0.85rem;
+}
+
+.checkbox-label input {
+  width: auto;
+  margin: 0;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(230px, 0.9fr) minmax(280px, 1fr) minmax(320px, 1.12fr);
@@ -396,7 +414,7 @@ small {
   gap: 0.15rem;
 }
 
-.recipe-row span:last-child,
+.recipe-row > span:last-child,
 .detail-header > span {
   border-radius: 999px;
   background: #eef2f6;
@@ -405,6 +423,21 @@ small {
   font-weight: 780;
   padding: 0.25rem 0.55rem;
   white-space: nowrap;
+}
+
+.recipe-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.favorite-badge {
+  border-radius: 999px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.75rem;
+  font-weight: 820;
+  padding: 0.18rem 0.45rem;
 }
 
 .recipe-row strong {
@@ -514,6 +547,18 @@ small {
   font-size: 0.86rem;
 }
 
+.share-panel {
+  align-items: end;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 0.9rem;
+}
+
+.share-panel label {
+  flex: 1;
+}
+
 .secondary-button {
   background: #5e6875;
 }
@@ -533,7 +578,8 @@ small {
 
 .status,
 .empty-state,
-.error {
+.error,
+.success {
   border-radius: 8px;
   padding: 0.9rem;
 }
@@ -549,6 +595,13 @@ small {
   border: 1px solid #fed7aa;
   background: var(--warning-bg);
   color: var(--warning-text);
+  font-weight: 750;
+}
+
+.success {
+  border: 1px solid rgba(63, 127, 114, 0.28);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
   font-weight: 750;
 }
 
@@ -589,7 +642,8 @@ small {
   .form-row,
   .recipes-header,
   .category-form,
-  .category-card {
+  .category-card,
+  .share-panel {
     display: grid;
     grid-template-columns: 1fr;
   }

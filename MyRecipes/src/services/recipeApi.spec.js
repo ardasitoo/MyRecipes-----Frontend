@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createCategory,
   createRecipe,
+  createUser,
   deleteRecipeById,
   getCategories,
   getRecipes,
+  getUsers,
+  shareRecipe,
   updateRecipe
 } from "./recipeApi";
 
@@ -62,6 +65,23 @@ describe("recipeApi", () => {
     );
   });
 
+  it("shares a recipe with another owner", async () => {
+    fetch.mockResolvedValueOnce(jsonResponse({ id: 4, name: "Pasta", ownerName: "Familie" }));
+
+    const result = await shareRecipe(1, "Familie");
+
+    expect(result.ownerName).toBe("Familie");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://myrecipes-backend-dew0.onrender.com/recipes/1/share",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          ownerName: "Familie"
+        })
+      })
+    );
+  });
+
   it("deletes a recipe by id", async () => {
     fetch.mockResolvedValueOnce(jsonResponse({}));
 
@@ -89,6 +109,30 @@ describe("recipeApi", () => {
 
     expect(fetch).toHaveBeenCalledWith(
       "https://myrecipes-backend-dew0.onrender.com/categories",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify(payload)
+      })
+    );
+  });
+
+  it("loads users", async () => {
+    fetch.mockResolvedValueOnce(jsonResponse([{ name: "Simar" }]));
+
+    const result = await getUsers();
+
+    expect(result[0].name).toBe("Simar");
+    expect(fetch).toHaveBeenCalledWith("https://myrecipes-backend-dew0.onrender.com/users");
+  });
+
+  it("creates a user with JSON payload", async () => {
+    const payload = { name: "Mina" };
+    fetch.mockResolvedValueOnce(jsonResponse({ id: 12, ...payload }));
+
+    await createUser(payload);
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://myrecipes-backend-dew0.onrender.com/users",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify(payload)

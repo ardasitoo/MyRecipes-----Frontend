@@ -11,7 +11,8 @@ const recipes = [
     preparationTime: 25,
     ingredients: "Nudeln, Tomaten",
     steps: "Kochen und servieren",
-    ownerName: "Simar"
+    ownerName: "Simar",
+    favorite: false
   },
   {
     id: 2,
@@ -21,7 +22,8 @@ const recipes = [
     preparationTime: 60,
     ingredients: "Äpfel, Mehl",
     steps: "Backen",
-    ownerName: "Simar"
+    ownerName: "Simar",
+    favorite: true
   }
 ];
 
@@ -33,13 +35,15 @@ const categories = [
   }
 ];
 
+const users = [{ name: "Simar" }, { name: "Familie" }, { name: "Dozent" }];
+
 const jsonResponse = (body, ok = true) =>
   Promise.resolve({
     ok,
     json: () => Promise.resolve(body)
   });
 
-const installApiMock = ({ loadedRecipes = recipes, loadedCategories = categories } = {}) => {
+const installApiMock = ({ loadedRecipes = recipes, loadedCategories = categories, loadedUsers = users } = {}) => {
   global.fetch = vi.fn((url, options = {}) => {
     const method = options.method || "GET";
     const requestUrl = String(url);
@@ -52,7 +56,15 @@ const installApiMock = ({ loadedRecipes = recipes, loadedCategories = categories
       return jsonResponse(loadedCategories);
     }
 
-    if (method === "POST" && requestUrl.includes("/recipes")) {
+    if (method === "GET" && requestUrl.includes("/users")) {
+      return jsonResponse(loadedUsers);
+    }
+
+    if (method === "POST" && requestUrl.includes("/share")) {
+      return jsonResponse({ id: 4, ...recipes[0], ownerName: JSON.parse(options.body).ownerName, favorite: false });
+    }
+
+    if (method === "POST" && requestUrl.endsWith("/recipes")) {
       return jsonResponse({ id: 3, ...JSON.parse(options.body) });
     }
 
@@ -62,6 +74,10 @@ const installApiMock = ({ loadedRecipes = recipes, loadedCategories = categories
 
     if (method === "POST" && requestUrl.includes("/categories")) {
       return jsonResponse({ id: 11, ...JSON.parse(options.body) });
+    }
+
+    if (method === "POST" && requestUrl.includes("/users")) {
+      return jsonResponse({ id: 12, ...JSON.parse(options.body) });
     }
 
     if (method === "DELETE") {
@@ -84,6 +100,11 @@ const clickTab = async (wrapper, label) => {
   await button.trigger("click");
 };
 
+const clickDetailAction = async (wrapper, label) => {
+  const button = wrapper.findAll(".recipe-detail .actions button").find((actionButton) => actionButton.text() === label);
+  await button.trigger("click");
+};
+
 describe("RecipeList", () => {
   beforeEach(() => {
     installApiMock();
@@ -98,6 +119,7 @@ describe("RecipeList", () => {
 
     expect(fetch).toHaveBeenCalledWith("https://myrecipes-backend-dew0.onrender.com/recipes?owner=Simar");
     expect(fetch).toHaveBeenCalledWith("https://myrecipes-backend-dew0.onrender.com/categories?owner=Simar");
+    expect(fetch).toHaveBeenCalledWith("https://myrecipes-backend-dew0.onrender.com/users");
   });
 
   it("renders loaded recipe names and details", async () => {
@@ -145,6 +167,15 @@ describe("RecipeList", () => {
     expect(wrapper.find(".recipe-list").text()).not.toContain("Pasta");
   });
 
+  it("filters recipes by favorites", async () => {
+    const wrapper = await mountWithApi();
+
+    await wrapper.find('.checkbox-label input[type="checkbox"]').setValue(true);
+
+    expect(wrapper.find(".recipe-list").text()).toContain("Apfelkuchen");
+    expect(wrapper.find(".recipe-list").text()).not.toContain("Pasta");
+  });
+
   it("shows custom categories in the category filter", async () => {
     const wrapper = await mountWithApi();
 
@@ -157,7 +188,7 @@ describe("RecipeList", () => {
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("Bitte gib einen Rezeptnamen ein.");
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(3);
   });
 
   it("creates a recipe with all form fields and the active owner", async () => {
@@ -183,7 +214,8 @@ describe("RecipeList", () => {
           preparationTime: 30,
           ingredients: "Mehl, Tomaten",
           steps: "Backen",
-          ownerName: "Simar"
+          ownerName: "Simar",
+          favorite: false
         })
       })
     );
@@ -192,7 +224,7 @@ describe("RecipeList", () => {
   it("starts editing a selected recipe", async () => {
     const wrapper = await mountWithApi();
 
-    await wrapper.find(".recipe-detail .actions button").trigger("click");
+    await clickDetailAction(wrapper, "Bearbeiten");
 
     expect(wrapper.find(".recipe-form h3").text()).toBe("Rezept bearbeiten");
     expect(wrapper.find('input[placeholder="z. B. Pizza Margherita"]').element.value).toBe("Pasta");
@@ -201,7 +233,7 @@ describe("RecipeList", () => {
   it("updates an existing recipe", async () => {
     const wrapper = await mountWithApi();
 
-    await wrapper.find(".recipe-detail .actions button").trigger("click");
+    await clickDetailAction(wrapper, "Bearbeiten");
     await wrapper.find('input[placeholder="z. B. Pizza Margherita"]').setValue("Pasta Napoli");
     await wrapper.find("form").trigger("submit.prevent");
     await flushPromises();
@@ -227,6 +259,41 @@ describe("RecipeList", () => {
     expect(wrapper.find(".recipe-list").text()).not.toContain("Pasta");
   });
 
+  it("marks the selected recipe as favorite", async () => {
+    const wrapper = await mountWithApi();
+
+    await wrapper.findAll(".recipe-detail .actions button")[0].trigger("click");
+    await flushPromises();
+
+    expect(fetch).toHaveBeenLastCalledWith(
+      "https://myrecipes-backend-dew0.onrender.com/recipes/1",
+      expect.objectContaining({
+        method: "PUT",
+        body: expect.stringContaining('"favorite":true')
+      })
+    );
+    expect(wrapper.find(".recipe-detail").text()).toContain("Favorit");
+  });
+
+  it("shares the selected recipe with another user", async () => {
+    const wrapper = await mountWithApi();
+
+    await wrapper.find(".share-panel select").setValue("Familie");
+    await wrapper.find(".share-panel button").trigger("click");
+    await flushPromises();
+
+    expect(fetch).toHaveBeenLastCalledWith(
+      "https://myrecipes-backend-dew0.onrender.com/recipes/1/share",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          ownerName: "Familie"
+        })
+      })
+    );
+    expect(wrapper.text()).toContain("Rezept wurde als Kopie an Familie weitergegeben.");
+  });
+
   it("creates a category in the category section", async () => {
     const wrapper = await mountWithApi();
 
@@ -246,5 +313,25 @@ describe("RecipeList", () => {
       })
     );
     expect(wrapper.text()).toContain("Frühstück");
+  });
+
+  it("creates a user in the users section", async () => {
+    const wrapper = await mountWithApi();
+
+    await clickTab(wrapper, "Benutzer");
+    await wrapper.find('input[placeholder="z. B. Mina"]').setValue("Mina");
+    await wrapper.find(".category-form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://myrecipes-backend-dew0.onrender.com/users",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          name: "Mina"
+        })
+      })
+    );
+    expect(wrapper.find(".user-switch select").element.value).toBe("Mina");
   });
 });
